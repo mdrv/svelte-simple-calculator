@@ -16,6 +16,7 @@
   let previousValue = $state(null); // The previous number entered
   let operator = $state(null); // The current operation (+, -, *, /)
   let waitingForNewValue = $state(false); // Flag to know if we should start a new number
+  let expression = $state(''); // The expression being built (e.g., "6 × 7")
 
   /**
    * Handles number button clicks
@@ -31,6 +32,11 @@
       // Otherwise, append the number to the existing display
       display = display + num;
     }
+    
+    // Update expression if we have a previous value and operator
+    if (previousValue !== null && operator !== null && !waitingForNewValue) {
+      expression = `${previousValue} ${getOperatorSymbol(operator)} ${display}`;
+    }
   }
 
   /**
@@ -44,6 +50,24 @@
     } else if (!display.includes('.')) {
       // Only add decimal if there isn't one already
       display = display + '.';
+    }
+    
+    // Update expression if we have a previous value and operator
+    if (previousValue !== null && operator !== null && !waitingForNewValue) {
+      expression = `${previousValue} ${getOperatorSymbol(operator)} ${display}`;
+    }
+  }
+
+  /**
+   * Converts operator symbol to display symbol
+   * @param {string} op - The operator (+, -, *, /)
+   * @returns {string} - The display symbol (e.g., × for *)
+   */
+  function getOperatorSymbol(op) {
+    switch (op) {
+      case '*': return '×';
+      case '/': return '÷';
+      default: return op;
     }
   }
 
@@ -61,6 +85,9 @@
     previousValue = parseFloat(display);
     operator = op;
     waitingForNewValue = true;
+    
+    // Update expression to show what we're calculating
+    expression = `${previousValue} ${getOperatorSymbol(op)}`;
   }
 
   /**
@@ -94,6 +121,9 @@
         return;
     }
 
+    // Set the expression to show the complete calculation
+    expression = `${previousValue} ${getOperatorSymbol(operator)} ${current} =`;
+
     // Update the display with the result
     // If result is a number, round to avoid floating point precision issues
     display = typeof result === 'number' ? String(Math.round(result * 100000000) / 100000000) : result;
@@ -112,6 +142,7 @@
     previousValue = null;
     operator = null;
     waitingForNewValue = false;
+    expression = '';
   }
 
   /**
@@ -134,8 +165,13 @@
 
 <!-- Calculator UI -->
 <div class="calculator">
-  <!-- Display screen showing current value -->
-  <div class="display">{display}</div>
+  <!-- Display screen showing expression and current value -->
+  <div class="display-container">
+    <!-- Expression line showing what's being calculated -->
+    <div class="expression">{expression || '\u00A0'}</div>
+    <!-- Main display showing current number or result -->
+    <div class="display">{display}</div>
+  </div>
   
   <!-- Calculator buttons grid -->
   <div class="buttons">
@@ -180,16 +216,32 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   }
 
-  /* Display screen */
-  .display {
+  /* Display container for expression and result */
+  .display-container {
     background: #2d2d2d;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    padding: 20px;
+    min-height: 100px;
+  }
+
+  /* Expression line showing the calculation */
+  .expression {
+    color: #888;
+    font-size: 20px;
+    text-align: right;
+    min-height: 24px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    word-break: break-all;
+  }
+
+  /* Main display screen showing result */
+  .display {
     color: #ffffff;
     font-size: 48px;
     text-align: right;
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    min-height: 60px;
+    min-height: 48px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -272,9 +324,18 @@
       width: 122px;
     }
 
+    .display-container {
+      padding: 15px;
+      min-height: 80px;
+    }
+
+    .expression {
+      font-size: 16px;
+      min-height: 20px;
+    }
+
     .display {
       font-size: 36px;
-      padding: 15px;
     }
   }
 </style>
